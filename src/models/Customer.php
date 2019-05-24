@@ -12,4 +12,9 @@ class Customer extends Model{
         'cpf',
         'email'
     ];
+
+    public function Orders()
+    {
+        return $this->hasMany('App\Models\Order');
+    }
 }
