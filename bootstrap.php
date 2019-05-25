@@ -22,6 +22,9 @@ $container['db'];
 
 $app = new \Slim\App($container);
 
+//middleware
+require __DIR__ . '/routes/middleware.php';
+
 //inlui rotas
 foreach (glob(__DIR__ .'/routes/*.php') as $filename) {
     require_once $filename;
