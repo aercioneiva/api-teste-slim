@@ -19,7 +19,7 @@ $auth = function ($request, $response, $next) {
 
     $token = $request->getHeaderLine("Authorization");
     try {
-        $jwt = JWT::decode($token, 'ajgajgagag6a', array("HS256"));
+        $jwt = JWT::decode($token, env('JWT_SCRET'), array("HS256"));
     } catch (Exception $e) {
         return $response->withJson(['error' => 'token is invalid'],401);
     }
