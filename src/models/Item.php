@@ -14,6 +14,10 @@ class Item extends Model{
         'order_id',
         'product_id'
     ];
+    protected $hidden = [
+        'product_id',
+        'order_id'
+    ];
 
     public function order()
     {
@@ -22,6 +26,6 @@ class Item extends Model{
 
     public function product()
     {
-        return $this->hasOne('App\Models\Product');
+        return $this->belongsTo('App\Models\Product');
     }
 }

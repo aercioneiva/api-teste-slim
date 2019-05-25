@@ -10,8 +10,13 @@ class Order extends Model{
     protected $fillable = [
         'status',
         'total',
+        'customer_id',
+    ];
+    protected $hidden = [
+        'updated_at',
         'customer_id'
     ];
+
 
     public function customer()
     {

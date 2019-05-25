@@ -7,12 +7,14 @@ use Psr\Http\Message\ResponseInterface as Response;
 use App\Models\Order;
 use App\Models\Item;
 use App\Models\Customer;
+use App\Models\Product;
 use Webmozart\Assert\Assert;
 use InvalidArgumentException;
-use  Illuminate\Database\QueryException;
+use Illuminate\Database\QueryException;
 use League\Fractal;
 use League\Fractal\Manager;
 use League\Fractal\Serializer\DataArraySerializer;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 $app->group("/v1/orders", function() use ($app) {
 
@@ -20,36 +22,33 @@ $app->group("/v1/orders", function() use ($app) {
         $manager = new Manager();
         $manager->setSerializer(new DataArraySerializer());
         
-        $orders = Order::with(['items','customer'])->get();
+        $orders = Order::all();
        
         $resource = new Fractal\Resource\Collection($orders, function($order) {
 
-          /* $items = new Fractal\Resource\Collection($order->items, function($item) {
-                return [
-                    'amount' => $item->amount,
-                    'price_unit' => $item->price_unit,
-                    'total'=>  $item->total
-                ];
-           });
-           
             $items = [];
 
-           foreach($order->items as $k => $item){
-            $items[$k]['amount'] = $item->amount;
-            $items[$k]['price_unit'] = $item->price_unit;
-            $items[$k]['total'] = $item->total;
-            $items[$k]['product'] = [
-                'id' =>,
-                'sku' =>,
-                'title' =>
-            ];
-           }
-*/
+            foreach ($order->items as $item) {
+                $item->product;
+
+                $items[] = [
+                    'amount' => $item->amount,
+                    'price_unit' => $item->price_unit,
+                    'total' => $item->total,
+                    'product' =>[
+                        'id' => $item->product->id,
+                        'sku' => $item->product->sku,
+                        'name' => $item->product->name
+                    ]
+                ];
+            }
+
             return [
                 'id'    => (int) $order->id,
                 'status' => $order->status,
                 'total'  => (float) $order->total,
                 'created_at' => $order->created_at,
+                'cancelDate' => $order->cancelDate ?? NULL,
                 'buyer' => [
                     'id' => $order->customer->id,
                     'name' => $order->customer->name,
@@ -60,16 +59,60 @@ $app->group("/v1/orders", function() use ($app) {
             ];
         });
 
-        
-        //$manager->createData($resource)->toArray()
-        return $response->withJson($manager->createData($resource)->toArray());
+        return $response->withJson($manager->createData($resource)->toArray()['data']);
     });
 
     $this->post("", function(Request $request, Response $response, $args = []) use ($app) {
         $data = $request->getParsedBody();
         
-        //customer
-        $customer = Customer::find($data['buyer']['id']);
+        try {
+            //customer
+            if(empty($data['buyer']['id'])){
+                throw new InvalidArgumentException('buyer[id] is required');
+            }
+            $customer = Customer::findOrFail($data['buyer']['id']);
+
+            Assert::keyExists($data, 'status', 'status is required');
+            Assert::notEmpty($data['status'], 'status is required');
+            Assert::keyExists($data, 'total', 'total is required');
+            Assert::greaterThan($data['total'], 0, 'total must be greater than 0');
+            Assert::float($data['total'], 'total must be float');
+
+            //items
+            if(empty($data['items'])){
+                throw new InvalidArgumentException('items is required');
+            }
+            Assert::isArray($data['items'], 'items must be array');
+            foreach ($data['items'] as $item) {
+                Assert::keyExists($item, 'amount', 'amount is required');
+                Assert::greaterThan($item['amount'], 0, 'amount must be greater than 0');
+                Assert::keyExists($item, 'price_unit', 'price_unit is required');
+                Assert::greaterThan($item['price_unit'], 0, 'price_unit must be greater than 0');
+                Assert::float($item['price_unit'], 'price_unit must be float');
+
+                //product
+                if(empty($item['product'])){
+                    throw new InvalidArgumentException('product is required');
+                }
+                Assert::isArray($item['product'], 'product must be object');
+                Assert::keyExists($item['product'], 'id', 'id is required');
+                Assert::notEmpty($item['product']['id'], 'id is required');
+                Assert::greaterThan($item['product']['id'], 0, 'id must be greater than 0');
+                Assert::keyExists($item['product'], 'sku', 'sku is required');
+                Assert::notEmpty($item['product']['sku'], 'sku is required');
+                Assert::numeric($item['product']['sku'], 'sku is not numeric');
+                Assert::keyExists($item['product'], 'name', 'name is required');
+                Assert::notEmpty($item['product']['name'], 'name is required');
+
+                $product = Product::findOrFail($item['product']['id']);
+            }
+        } catch (InvalidArgumentException $e) {
+            return $response->withJson(['error' => $e->getMessage()]);
+        } catch (QueryException $e) {
+            return $response->withJson(['error' => $e->getMessage()]);
+        }catch (ModelNotFoundException $e) {
+            return $response->withJson(['error' => 'order not found']);
+        }
         
         //orders
         $order = new Order;
@@ -90,9 +133,35 @@ $app->group("/v1/orders", function() use ($app) {
             $item->save();
         }
 
-        return $response->withJson($order::with(['items','customer'])->get());
+        return $response->withJson($order);
     });
 
-    
+    $this->put("/{id:[0-9]+}", function(Request $request, Response $response, $args = []) use ($app) {
+        $id = $args["id"];
+        $data = $request->getParsedBody();
+
+        try {
+            Assert::keyExists($data, 'status', 'status is required');
+            Assert::notEmpty($data['status'], 'status is required');
+            Assert::keyExists($data, 'order_id', 'order_id is required');
+            Assert::notEmpty($data['order_id'], 'order_id is required');
+            $order = Order::findOrFail($id);
+            $order->status =  $data['status'];
+            $order->cancelDate = date('Y-m-d H:i:s');
+            $order->update();
+
+            return $response->withJson($order);
+        } catch (InvalidArgumentException $e) {
+            return $response->withJson(['error' => $e->getMessage()]);
+        } catch (QueryException $e) {
+            return $response->withJson(['error' => $e->getMessage()]);
+        } catch (ModelNotFoundException $e) {
+            return $response->withJson(['error' => 'order not found']);
+        }
+
+        
+
+        
+    });
 });
 
