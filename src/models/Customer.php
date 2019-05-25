@@ -10,11 +10,22 @@ class Customer extends Model{
     protected $fillable = [
         'name',
         'cpf',
-        'email'
+        'email',
+        'password'
     ];
 
+    protected $hidden = [
+        'password'
+    ];
+    
     public function Orders()
     {
         return $this->hasMany('App\Models\Order');
+    }
+
+    public function setPasswordAttribute($value){
+        if(!empty($value)){
+            $this->attributes['password'] = password_hash($value,PASSWORD_DEFAULT);
+        }
     }
 }

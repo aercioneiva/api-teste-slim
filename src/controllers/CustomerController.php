@@ -32,7 +32,7 @@ class CustomerController{
         Assert::keyExists($data, 'name', 'name is required');
         Assert::notEmpty($data['name'], 'name is required');
         Assert::keyExists($data, 'email', 'email is required');
-        Assert::greaterThan($data['email'], 'email is required');
+        Assert::notEmpty($data['email'], 'email is required');
         
         if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
             throw new InvalidArgumentException('email is invalid');
@@ -41,5 +41,8 @@ class CustomerController{
         if(Customer::where('email', $data['email'])->orWhere('cpf', $data['cpf'])->first()){
             throw new InvalidArgumentException('email or cpf already exists');
         }
+
+        Assert::keyExists($data, 'password', 'password is required');
+        Assert::notEmpty($data['password'], 'password is required');
     }
 }
