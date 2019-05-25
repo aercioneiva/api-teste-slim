@@ -153,6 +153,9 @@ class ComposerStaticInitdb70f698ef20a4f8557798cdeb37091c
     );
 
     public static $classMap = array (
+        'App\\Controllers\\CustomerController' => __DIR__ . '/../..' . '/src/controllers/CustomerController.php',
+        'App\\Controllers\\OrderController' => __DIR__ . '/../..' . '/src/controllers/OrderController.php',
+        'App\\Controllers\\ProductController' => __DIR__ . '/../..' . '/src/controllers/ProductController.php',
         'App\\Models\\Customer' => __DIR__ . '/../..' . '/src/models/Customer.php',
         'App\\Models\\Item' => __DIR__ . '/../..' . '/src/models/Item.php',
         'App\\Models\\Order' => __DIR__ . '/../..' . '/src/models/Order.php',
