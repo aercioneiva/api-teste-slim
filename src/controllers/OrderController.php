@@ -60,7 +60,6 @@ class OrderController{
     }
 
     public function create($request, $response, $args){
-        $id = $args["id"];
         $data = $request->getParsedBody();
 
         try {

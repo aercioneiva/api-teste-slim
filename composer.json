@@ -5,7 +5,8 @@
         "webmozart/assert": "^1.4",
         "league/fractal": "^0.18.0",
         "firebase/php-jwt": "^5.0",
-        "vlucas/phpdotenv": "^3.3"
+        "vlucas/phpdotenv": "^3.3",
+        "robmorgan/phinx": "^0.10.7"
     },
     "autoload": {
         "psr-4": {

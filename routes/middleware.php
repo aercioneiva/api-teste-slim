@@ -13,7 +13,7 @@ $app->add(function($request,$response,$next){
 //auth
 $auth = function ($request, $response, $next) {
 
-    if (!$request->hasHeader("Authorization")) {
+   /* if (!$request->hasHeader("Authorization")) {
         return $response->withJson(['error' => 'token is invalid'],401);
     }
 
@@ -22,7 +22,7 @@ $auth = function ($request, $response, $next) {
         $jwt = JWT::decode($token, env('JWT_SCRET'), array("HS256"));
     } catch (Exception $e) {
         return $response->withJson(['error' => 'token is invalid'],401);
-    }
+    }*/
 
     $response = $next($request, $response);
     return $response;

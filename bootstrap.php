@@ -8,22 +8,10 @@ $dotenv->load();
 
 $settings = require __DIR__ . '/config/settings.php';
 
-$container = new \Slim\Container($settings);
+$app = new \Slim\App($settings);
 
-//configuração do eloquent
-$container['db'] = function ($container) {
-    $capsule = new \Illuminate\Database\Capsule\Manager;
-    $capsule->addConnection($container['settings']['db']);
-
-    $capsule->setAsGlobal();
-    $capsule->bootEloquent();
-
-    return $capsule;
-};
-
-$container['db'];
-
-$app = new \Slim\App($container);
+//dependencies
+require  __DIR__ . '/config/dependencies.php';
 
 //middleware
 require __DIR__ . '/routes/middleware.php';
